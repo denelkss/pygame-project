@@ -4,9 +4,9 @@ import pytmx
 
 pygame.init()
 
-WINDOW_SIZE = (1800, 1000)
+WINDOW_SIZE = (2400, 640)
 screen = pygame.display.set_mode(WINDOW_SIZE)
-tmx_map = pytmx.load_pygame("map.tmx") # будущая карта
+tmx_map = pytmx.load_pygame("images\map\map1.tmx")
 
 def draw_map():
     for layer in tmx_map.visible_layers:
@@ -27,3 +27,5 @@ while running:
     draw_map()
     pygame.display.update()
 pygame.quit()
+
+# 1 уровень - 2400 x 640 (150 х 40 тайлов, 16 х 16 - 1 тайл)
