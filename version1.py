@@ -6,7 +6,7 @@ import os
 pygame.init()
 pygame.display.set_caption("Танджиро: в поисках Незуко")
 
-WINDOW_SIZE = (1400, 640)
+WINDOW_SIZE = (2400, 640)
 screen = pygame.display.set_mode(WINDOW_SIZE)
 tmx_map = pytmx.load_pygame("images\map\map1.tmx")
 
