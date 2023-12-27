@@ -48,7 +48,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
                                 sheet.get_height() // rows)
         for j in range(rows):
             for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
+                frame_location = (self.rect.w * i, self.rect.h * j)  #  f
                 self.frames.append(sheet.subsurface(pygame.Rect(
                     frame_location, self.rect.size)))
 
