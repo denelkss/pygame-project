@@ -2,46 +2,72 @@ import pygame
 import pytmx
 import os
 
-pygame.init()
-pygame.display.set_caption("Танджиро: в поисках Незуко")
 
-screen_size = width_size, height_size = 2400, 640
-screen = pygame.display.set_mode(screen_size)
-tmx_map = pytmx.load_pygame("images\map\map1.tmx")
+class Player(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.speed = 20
+        self.current_frame = 0
+        self.frames = []
+        self.load_frames()
+        self.image = self.frames[0]
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.x, self.y)
 
-tmx_map = pytmx.load_pygame("images/map/map1.tmx")
+    def load_frames(self):
+        spritesheet = pygame.image.load("images/sprites/hero/hero_run.png").convert_alpha()
+        for i in range(10):
+            self.frames.append(spritesheet.subsurface((i * 32, 0, 80, 80)))
 
-# Загрузка изображений для анимации персонажа
-player_spritesheet = pygame.image.load("images/sprites/hero/hero_run.png").convert_alpha()
+    def update(self, keys):
+        if keys[pygame.K_LEFT]:
+            self.x -= self.speed
+        if keys[pygame.K_RIGHT]:
+            self.x += self.speed
+        if keys[pygame.K_UP]:
+            self.y -= self.speed
+        if keys[pygame.K_DOWN]:
+            self.y += self.speed
 
-# Создание списка спрайтов для анимации персонажа
-player_frames = []
-for i in range(10):
-    player_frames.append(player_spritesheet.subsurface((i * 32, 0, 80, 80)))
+        self.current_frame += 1
+        if self.current_frame >= len(self.frames):
+            self.current_frame = 0
+        self.image = self.frames[self.current_frame]
+        self.rect.center = (self.x, self.y)
 
-# Определение начальной позиции персонажа на карте
-player_x = 100
-player_y = 100
 
-# Создание спрайта персонажа
-player_sprite = pygame.sprite.Sprite()
-player_sprite.image = player_frames[0]
-player_sprite.rect = player_sprite.image.get_rect()
-player_sprite.rect.center = (player_x, player_y)
+class Tile(pygame.sprite.Sprite):
+    def __init__(self, image, x, y):
+        super().__init__()
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
 
-# Определение скорости перемещения персонажа
-player_speed = 20
 
-# Определение текущего кадра анимации персонажа
-current_frame = 0
-
-def draw_map():
+def draw_map(tmx_map):
+    tiles = pygame.sprite.Group()
     for layer in tmx_map.visible_layers:
         if isinstance(layer, pytmx.TiledTileLayer):
             for x, y, gid in layer:
-                tile = tmx_map.get_tile_image_by_gid(gid)
-                if tile != None:
-                    screen.blit(tile, (x * tmx_map.tilewidth, y * tmx_map.tileheight))
+                tile_image = tmx_map.get_tile_image_by_gid(gid)
+                if tile_image != None:
+                    tile = Tile(tile_image, x * tmx_map.tilewidth, y * tmx_map.tileheight)
+                    tiles.add(tile)
+                    screen.blit(tile_image, (x * tmx_map.tilewidth, y * tmx_map.tileheight))
+    return tiles
+
+
+pygame.init()
+pygame.display.set_caption("Танджиро: в поисках Незуко")
+screen_size = width_size, height_size = 2400, 640
+screen = pygame.display.set_mode(screen_size)
+
+tmx_map = pytmx.load_pygame("images/map/map1.tmx")
+
+player = Player(100, 100)
 
 running = True
 while running:
@@ -49,30 +75,15 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # Обработка клавиш для перемещения персонажа
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
-        player_x -= player_speed
-    if keys[pygame.K_RIGHT]:
-        player_x += player_speed
-    if keys[pygame.K_UP]:
-        player_y -= player_speed
-    if keys[pygame.K_DOWN]:
-        player_y += player_speed
 
-    # Обновление текущего кадра анимации персонажа
-    current_frame += 1
-    if current_frame >= len(player_frames):
-        current_frame = 0
-    player_sprite.image = player_frames[current_frame]
+    tiles = draw_map(tmx_map)
 
-    # Обновление позиции спрайта персонажа на карте
-    player_sprite.rect.center = (player_x, player_y)
+    player.update(keys)
 
-    # Отрисовка карты и спрайта персонажа на экране
-    draw_map()
-    screen.blit(player_sprite.image, player_sprite.rect)
+    screen.fill((0, 0, 0))
+    tiles.draw(screen)
+    screen.blit(player.image, player.rect)
     pygame.display.flip()
-
 
 pygame.quit()
