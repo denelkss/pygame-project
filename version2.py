@@ -16,13 +16,11 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
 
-    # Анимация персонажа
     def load_frames(self):
-        spritesheet = pygame.image.load("images/sprites/hero/hero_run.png").convert_alpha ()
+        spritesheet = pygame.image.load("images/sprites/hero/hero_run.png").convert_alpha()
         for i in range(10):
             self.frames.append(spritesheet.subsurface((i * 32, 0, 80, 80)))
 
-    # Изменение состояния персонажа: перемещение и анмация
     def update(self, keys):
         if keys[pygame.K_LEFT]:
             self.x -= self.speed
@@ -40,13 +38,26 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = (self.x, self.y)
 
 
+class Tile(pygame.sprite.Sprite):
+    def __init__(self, image, x, y):
+        super().__init__()
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+
 def draw_map(tmx_map):
+    tiles = pygame.sprite.Group()
     for layer in tmx_map.visible_layers:
         if isinstance(layer, pytmx.TiledTileLayer):
             for x, y, gid in layer:
-                tile = tmx_map.get_tile_image_by_gid(gid)
-                if tile != None:
-                    screen.blit(tile, (x * tmx_map.tilewidth, y * tmx_map.tileheight))
+                tile_image = tmx_map.get_tile_image_by_gid(gid)
+                if tile_image != None:
+                    tile = Tile(tile_image, x * tmx_map.tilewidth, y * tmx_map.tileheight)
+                    tiles.add(tile)
+                    screen.blit(tile_image, (x * tmx_map.tilewidth, y * tmx_map.tileheight))
+    return tiles
 
 
 pygame.init()
@@ -66,10 +77,12 @@ while running:
 
     keys = pygame.key.get_pressed()
 
+    tiles = draw_map(tmx_map)
+
     player.update(keys)
 
     screen.fill((0, 0, 0))
-    draw_map(tmx_map)
+    tiles.draw(screen)
     screen.blit(player.image, player.rect)
     pygame.display.flip()
 
