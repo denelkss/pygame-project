@@ -110,16 +110,16 @@ def main_menu():
         menu_mouse_pos = pygame.mouse.get_pos()
 
         text_menu = get_font(100).render("ГЛАВНОЕ МЕНЮ", True, (105,105,105))
-        menu_rect = text_menu.get_rect(center=(640, 100))
+        menu_rect = text_menu.get_rect(center=(600, 100))
 
         # фон кнопки (серый)
         back_image = pygame.image.load("images/menu/button_back.png")
 
-        play_button = Button(back_image, (640, 250), get_font(70), "играть",  (215,252,244),
+        play_button = Button(back_image, (600, 250), get_font(70), "играть",  (215,252,244),
                              "white")
-        rules_button = Button(back_image, (640, 400), get_font(70), "правила",
+        rules_button = Button(back_image, (600, 400), get_font(70), "правила",
                               (215,252,244), "white")
-        quit_button = Button(back_image, (640, 550), get_font(70), "выйти", (215,252,244),
+        quit_button = Button(back_image, (600, 550), get_font(70), "выйти", (215,252,244),
                              "white")
 
         screen.blit(text_menu, menu_rect)
