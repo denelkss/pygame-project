@@ -16,40 +16,45 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
 
+    # анимация
     def load_frames(self):
         spritesheet = pygame.image.load("images/sprites/hero/hero_run.png").convert_alpha()
         for i in range(10):
             self.frames.append(spritesheet.subsurface((i * 32, 0, 48, 70)))
 
+
+    # движение и коллизия
     def update(self, keys, tiles, map_width, map_height):
+        collision = map1.get_layer_by_name('platforms')
+        tiles_collision = []
+        for x, y, tile in collision.tiles():
+            if (tile):
+                tiles_collision.append(pygame.Rect([(x * tile_size), (y * tile_size), tile_size, tile_size]))
+
         if keys[pygame.K_LEFT]:
-            if self.x - self.speed >= 0:  # Проверяем, не выходит ли игрок за левую границу карты
+            # проверяем, не выходит ли персонаж за левую границу карты
+            if (self.x - width_player // 2) - self.speed >= 0:
                 self.x -= self.speed
         if keys[pygame.K_RIGHT]:
-            if self.x + self.speed <= map_width - self.rect.width:  # Проверяем, не выходит ли игрок за правую границу карты
+            # проверяем, не выходит ли персонаж за правую границу карты
+            if (self.x + width_player // 2) + self.speed <= map_width:
                 self.x += self.speed
         if keys[pygame.K_UP]:
-            if self.y - self.speed >= 0:  # Проверяем, не выходит ли игрок за верхнюю границу карты
+            # проверяем, не выходит ли персонаж за верхнюю границу карты
+            if (self.y - height_player // 1) - self.speed >= 0:
                 self.y -= self.speed
         if keys[pygame.K_DOWN]:
-            if self.y + self.speed <= map_height - self.rect.height:  # Проверяем, не выходит ли игрок за нижнюю границу карты
+            # проверяем, не выходит ли персонаж за нижнюю границу карты
+            if (self.y + height_player // 2) + self.speed <= map_height:
                 self.y += self.speed
-        #if keys[pygame.K_LEFT]:
-        #    self.x -= self.speed
-        #if keys[pygame.K_RIGHT]:
-        #    self.x += self.speed
-        #if keys[pygame.K_UP]:
-        #    self.y -= self.speed
-        #if keys[pygame.K_DOWN]:
-        #    self.y += self.speed
 
-        # Обновляем прямоугольник игрока
+        # обновляем прямоугольник персонажа
         self.rect.center = (self.x, self.y)
 
-        # Проверяем коллизии с тайлами
-        for tile in tiles:
-            if self.rect.colliderect(tile.rect):
-                # Обработка коллизии: возвращаем игрока на предыдущую позицию
+        # проверяем коллизии персонажа с тайлами
+        for tile in tiles_collision:
+            if self.rect.colliderect(tile):
+                # возвращаем игрока на предыдущую позицию
                 if keys[pygame.K_LEFT]:
                     self.x += self.speed
                 if keys[pygame.K_RIGHT]:
@@ -70,7 +75,9 @@ class Tile(pygame.sprite.Sprite):
         self.rect.y = y
 
 
+# отрисовка карты
 def draw_map(tmx_map):
+    collision = tmx_map.get_layer_by_name('platforms')
     tiles = pygame.sprite.Group()
     for layer in tmx_map.visible_layers:
         if isinstance(layer, pytmx.TiledTileLayer):
@@ -84,14 +91,19 @@ def draw_map(tmx_map):
     return tiles
 
 
+
 pygame.init()
 pygame.display.set_caption("Танджиро: в поисках Незуко")
 screen_size = width_size, height_size = 1200, 640
+tile_size = 16
 screen = pygame.display.set_mode(screen_size)
 
-tmx_map = pytmx.load_pygame("images/map/map12.tmx")
+map1 = pytmx.load_pygame("images/map/level1.tmx")
+map2 = pytmx.load_pygame("images/map/level2.tmx")
+map3 = pytmx.load_pygame("images/map/leve3.tmx")
 
-player = Player(64, 336)
+width_player, height_player = 48, 70
+player = Player(70, 330)
 
 running = True
 while running:
@@ -100,12 +112,16 @@ while running:
             running = False
 
     keys = pygame.key.get_pressed()
-    #player.update(keys, tiles)  # Передаем тайлы для проверки коллизий
-    tiles = draw_map(tmx_map)
-    player.update(keys, tiles, 1200, 640)
+    tiles = draw_map(map1)
+
+    # обновление игрока
+    player.update(keys, tiles, width_size, height_size)
+
+    # отрисовка тайлов и игрока
     screen.fill((0, 0, 0))
     tiles.draw(screen)
     screen.blit(player.image, player.rect)
+
     pygame.display.flip()
 
 pygame.quit()
