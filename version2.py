@@ -8,7 +8,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self.x = x
         self.y = y
-        self.speed = 20
+        self.speed = 5
         self.current_frame = 0
         self.frames = []
         self.load_frames()
@@ -19,23 +19,46 @@ class Player(pygame.sprite.Sprite):
     def load_frames(self):
         spritesheet = pygame.image.load("images/sprites/hero/hero_run.png").convert_alpha()
         for i in range(10):
-            self.frames.append(spritesheet.subsurface((i * 32, 0, 80, 80)))
+            self.frames.append(spritesheet.subsurface((i * 32, 0, 48, 70)))
 
-    def update(self, keys):
+    def update(self, keys, tiles, map_width, map_height):
         if keys[pygame.K_LEFT]:
-            self.x -= self.speed
+            if self.x - self.speed >= 0:  # Проверяем, не выходит ли игрок за левую границу карты
+                self.x -= self.speed
         if keys[pygame.K_RIGHT]:
-            self.x += self.speed
+            if self.x + self.speed <= map_width - self.rect.width:  # Проверяем, не выходит ли игрок за правую границу карты
+                self.x += self.speed
         if keys[pygame.K_UP]:
-            self.y -= self.speed
+            if self.y - self.speed >= 0:  # Проверяем, не выходит ли игрок за верхнюю границу карты
+                self.y -= self.speed
         if keys[pygame.K_DOWN]:
-            self.y += self.speed
+            if self.y + self.speed <= map_height - self.rect.height:  # Проверяем, не выходит ли игрок за нижнюю границу карты
+                self.y += self.speed
+        #if keys[pygame.K_LEFT]:
+        #    self.x -= self.speed
+        #if keys[pygame.K_RIGHT]:
+        #    self.x += self.speed
+        #if keys[pygame.K_UP]:
+        #    self.y -= self.speed
+        #if keys[pygame.K_DOWN]:
+        #    self.y += self.speed
 
-        self.current_frame += 1
-        if self.current_frame >= len(self.frames):
-            self.current_frame = 0
-        self.image = self.frames[self.current_frame]
+        # Обновляем прямоугольник игрока
         self.rect.center = (self.x, self.y)
+
+        # Проверяем коллизии с тайлами
+        for tile in tiles:
+            if self.rect.colliderect(tile.rect):
+                # Обработка коллизии: возвращаем игрока на предыдущую позицию
+                if keys[pygame.K_LEFT]:
+                    self.x += self.speed
+                if keys[pygame.K_RIGHT]:
+                    self.x -= self.speed
+                if keys[pygame.K_UP]:
+                    self.y += self.speed
+                if keys[pygame.K_DOWN]:
+                    self.y -= self.speed
+                self.rect.center = (self.x, self.y)
 
 
 class Tile(pygame.sprite.Sprite):
@@ -57,17 +80,18 @@ def draw_map(tmx_map):
                     tile = Tile(tile_image, x * tmx_map.tilewidth, y * tmx_map.tileheight)
                     tiles.add(tile)
                     screen.blit(tile_image, (x * tmx_map.tilewidth, y * tmx_map.tileheight))
+
     return tiles
 
 
 pygame.init()
 pygame.display.set_caption("Танджиро: в поисках Незуко")
-screen_size = width_size, height_size = 2400, 640
+screen_size = width_size, height_size = 1200, 640
 screen = pygame.display.set_mode(screen_size)
 
-tmx_map = pytmx.load_pygame("images/map/map1.tmx")
+tmx_map = pytmx.load_pygame("images/map/map12.tmx")
 
-player = Player(100, 100)
+player = Player(64, 336)
 
 running = True
 while running:
@@ -76,11 +100,9 @@ while running:
             running = False
 
     keys = pygame.key.get_pressed()
-
+    #player.update(keys, tiles)  # Передаем тайлы для проверки коллизий
     tiles = draw_map(tmx_map)
-
-    player.update(keys)
-
+    player.update(keys, tiles, 1200, 640)
     screen.fill((0, 0, 0))
     tiles.draw(screen)
     screen.blit(player.image, player.rect)
