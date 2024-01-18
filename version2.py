@@ -9,61 +9,80 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self.x = x
         self.y = y
-        self.speed = 5
+
+        # передвижение
+        self.speed = 4
+        self.fallspeed = 0
+        self.jumpspeed = 8
+        self.gravity = 0.8
+
+        # анимация
         self.current_frame = 0
         self.frames = []
         self.load_frames()
         self.image = self.frames[0]
+
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
+        self.flip = False
 
     # анимация
     def load_frames(self):
-        spritesheet = pygame.image.load("images/sprites/hero/hero_run.png").convert_alpha()
+        spritesheet = pygame.image.load("images/sprites/heroes/tanjiro_stand.png").convert_alpha()
         for i in range(10):
-            self.frames.append(spritesheet.subsurface((i * 32, 0, 48, 70)))
+            self.frames.append(spritesheet.subsurface((0, 0, 22, 51)))
 
-    # движение и коллизия
-    def update(self, keys, tiles, map_width, map_height):
+    def collide(self, tiles):
         collision = current_map.get_layer_by_name('platforms')
         tiles_collision = []
         for x, y, tile in collision.tiles():
             if (tile):
                 tiles_collision.append(pygame.Rect([(x * tile_size), (y * tile_size), tile_size, tile_size]))
 
-        if keys[pygame.K_LEFT]:
-            # проверяем, не выходит ли персонаж за левую границу карты
-            if (self.x - width_player // 2) - self.speed >= 0:
-                self.x -= self.speed
-        if keys[pygame.K_RIGHT]:
-            # проверяем, не выходит ли персонаж за правую границу карты
-            if (self.x + width_player // 2) + self.speed <= map_width:
-                self.x += self.speed
-        if keys[pygame.K_UP]:
-            # проверяем, не выходит ли персонаж за верхнюю границу карты
-            if (self.y - height_player // 1) - self.speed >= 0:
-                self.y -= self.speed
-        if keys[pygame.K_DOWN]:
-            # проверяем, не выходит ли персонаж за нижнюю границу карты
-            if (self.y + height_player // 2) + self.speed <= map_height:
-                self.y += self.speed
+        return tiles_collision
 
-        # обновляем прямоугольник персонажа
-        self.rect.center = (self.x, self.y)
+
+    # стоит ли персонаж на земле
+    def check_platforms(self):
+        collision = current_map.get_layer_by_name('platforms')
+        tiles = []
+        for x, y, tile in collision.tiles():
+            if (tile):
+                tiles.append(pygame.Rect([(x * tile_size), (y * tile_size), tile_size, tile_size]))
+
+        check = False
+        if (self.rect.collidelistall(tiles)):
+            check = True
+        return check
+
+    def move(self, tiles, map_width, map_height):
+        keys = pygame.key.get_pressed()
+        tiles_collision = self.collide(tiles)
+
+
+        # если эту часть убрать, то перс в воздухе не может передвигаться, а если добавить, то столкновения не работают
+        if keys[pygame.K_LEFT] and not self.check_platforms():
+            self.x -= self.speed
+        if keys[pygame.K_RIGHT] and not self.check_platforms():
+            self.x += self.speed
 
         # проверяем коллизии персонажа с тайлами
         for tile in tiles_collision:
             if self.rect.colliderect(tile):
-                # возвращаем игрока на предыдущую позицию
                 if keys[pygame.K_LEFT]:
-                    self.x += self.speed
-                if keys[pygame.K_RIGHT]:
                     self.x -= self.speed
-                if keys[pygame.K_UP]:
-                    self.y += self.speed
-                if keys[pygame.K_DOWN]:
-                    self.y -= self.speed
-                self.rect.center = (self.x, self.y)
+                if keys[pygame.K_RIGHT]:
+                    self.x += self.speed
+                if keys[pygame.K_UP] and self.check_platforms():
+                    self.y -= self.jumpspeed
+                    self.fallspeed = -self.jumpspeed
+
+
+        if not self.check_platforms():
+            self.fallspeed += self.gravity
+            self.y += self.fallspeed
+
+        self.rect.center = (self.x, self.y)
 
 
 class Tile(pygame.sprite.Sprite):
@@ -142,11 +161,11 @@ def change_map(tmx_map):
 
     # координаты игрока (в зависимости от текущей карты)
     if current_map == map1:
-        player = Player(70, 330)
+        player = Player(70, 340)
     elif current_map == map2:
-        player = Player(70, 315)
+        player = Player(70, 325)
     elif current_map == map3:
-        player = Player(70, 345)
+        player = Player(70, 355)
 
 
 # играть
@@ -283,11 +302,10 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    keys = pygame.key.get_pressed()
     tiles = draw_map(current_map)
 
     # обновление игрока
-    player.update(keys, tiles, width_size, height_size)
+    player.move(tiles, width_size, height_size)
 
     # отрисовка тайлов и игрока
     screen.fill((0, 0, 0))
