@@ -61,9 +61,9 @@ class Player(pygame.sprite.Sprite):
 
 
         # если эту часть убрать, то перс в воздухе не может передвигаться, а если добавить, то столкновения не работают
-        if keys[pygame.K_LEFT] and not self.check_platforms():
+        if keys[pygame.K_LEFT] and self.y < 400:
             self.x -= self.speed
-        if keys[pygame.K_RIGHT] and not self.check_platforms():
+        if keys[pygame.K_RIGHT] and self.y < 400:
             self.x += self.speed
 
         # проверяем коллизии персонажа с тайлами
