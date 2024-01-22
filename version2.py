@@ -10,11 +10,15 @@ class Player(pygame.sprite.Sprite):
         self.x = x
         self.y = y
 
+        # добавлю флаг для бега, чтобы когда персонаж бежал, этот флаг активировался и проигрывалась анимация бега
+        self.run_animation = False
+
         # передвижение
-        self.speed = 4
+        self.speed = 5
         self.fallspeed = 0
         self.jumpspeed = 8
         self.gravity = 0.8
+
 
         # анимация
         self.current_frame = 0
@@ -22,15 +26,24 @@ class Player(pygame.sprite.Sprite):
         self.load_frames()
         self.image = self.frames[0]
 
+
+
+
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
         self.flip = False
 
     # анимация
     def load_frames(self):
-        spritesheet = pygame.image.load("images/sprites/heroes/tanjiro_stand.png").convert_alpha()
+        print(self.run_animation)
+        if self.run_animation:
+            spritesheet = pygame.image.load("images/sprites/heroes/tanjiro_run.png").convert_alpha()
+            print(2)
+        else:
+            spritesheet = pygame.image.load("images/sprites/heroes/tanjiro_stand.png").convert_alpha()
         for i in range(10):
             self.frames.append(spritesheet.subsurface((0, 0, 22, 51)))
+
 
     def collide(self, tiles):
         collision = current_map.get_layer_by_name('platforms')
@@ -59,20 +72,24 @@ class Player(pygame.sprite.Sprite):
         keys = pygame.key.get_pressed()
         tiles_collision = self.collide(tiles)
 
-
         # если эту часть убрать, то перс в воздухе не может передвигаться, а если добавить, то столкновения не работают
         if keys[pygame.K_LEFT] and self.y < 400:
             self.x -= self.speed
-        if keys[pygame.K_RIGHT] and self.y < 400:
+            self.run_animation = True
+
+        if keys[pygame.K_RIGHT] and self.y < 350:
             self.x += self.speed
+            self.run_animation = True
 
         # проверяем коллизии персонажа с тайлами
         for tile in tiles_collision:
             if self.rect.colliderect(tile):
                 if keys[pygame.K_LEFT]:
                     self.x -= self.speed
+                    self.run_animation = True
                 if keys[pygame.K_RIGHT]:
                     self.x += self.speed
+                    self.run_animation = True
                 if keys[pygame.K_UP] and self.check_platforms():
                     self.y -= self.jumpspeed
                     self.fallspeed = -self.jumpspeed
