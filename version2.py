@@ -35,14 +35,23 @@ class Player(pygame.sprite.Sprite):
 
     # анимация
     def load_frames(self):
-        print(self.run_animation)
         if self.run_animation:
             spritesheet = pygame.image.load("images/sprites/heroes/tanjiro_run.png").convert_alpha()
-            print(2)
+            for i in range(5):
+                self.frames.append(spritesheet.subsurface((0, 0, 20, 21)))
         else:
             spritesheet = pygame.image.load("images/sprites/heroes/tanjiro_stand.png").convert_alpha()
-        for i in range(10):
-            self.frames.append(spritesheet.subsurface((0, 0, 22, 51)))
+            for i in range(10):
+                self.frames.append(spritesheet.subsurface((0, 0, 22, 51)))
+
+    def update(self):
+        self.current_frame += 1
+        if self.current_frame == len(self.frames):
+            self.current_frame = 0
+
+        self.image = self.frames[self.current_frame]
+        if self.flip:
+            self.image = pygame.transform.flip(self.image, True, False)
 
 
     def collide(self, tiles):
@@ -309,8 +318,11 @@ map3 = pytmx.load_pygame("images/map/level3.tmx")
 
 current_map = map1  # текущая карта
 
+
+
 width_player, height_player = 48, 70
 player = Player(70, 330)
+
 main_menu()
 
 running = True
@@ -321,8 +333,11 @@ while running:
 
     tiles = draw_map(current_map)
 
+
     # обновление игрока
     player.move(tiles, width_size, height_size)
+    player.load_frames()
+    player.update()
 
     # отрисовка тайлов и игрока
     screen.fill((0, 0, 0))
