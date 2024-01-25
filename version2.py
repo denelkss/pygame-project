@@ -10,8 +10,12 @@ class Player(pygame.sprite.Sprite):
         self.x = x
         self.y = y
 
-        # добавлю флаг для бега, чтобы когда персонаж бежал, этот флаг активировался и проигрывалась анимация бега
+        # действия персонажа (стоять, бежать, прыгать, ранить, смерть)
+        self.stand_animation = True
         self.run_animation = False
+        self.jump_animation = False
+        self.hit = False
+        self.death = False
 
         # передвижение
         self.speed = 5
@@ -19,40 +23,60 @@ class Player(pygame.sprite.Sprite):
         self.jumpspeed = 8
         self.gravity = 0.8
 
+        self.stand = pygame.image.load('images/sprites/heroes/tanjiro_stand.png')
+
+        self.run = [pygame.image.load('images/sprites/heroes/tanjiro_run1.png'),
+                    pygame.image.load('images/sprites/heroes/tanjiro_run2.png'),
+                    pygame.image.load('images/sprites/heroes/tanjiro_run3.png'),
+                    pygame.image.load('images/sprites/heroes/tanjiro_run4.png'),
+                    pygame.image.load('images/sprites/heroes/tanjiro_run5.png')]
+
+        self.jump = [pygame.image.load('images/sprites/heroes/tanjiro_jump2.png'),
+                     pygame.image.load('images/sprites/heroes/tanjiro_jump3.png')]
+
+        self.hit = [pygame.image.load('images/sprites/heroes/tanjiro_hit1.png'),
+                    pygame.image.load('images/sprites/heroes/tanjiro_hit2.png'),
+                    pygame.image.load('images/sprites/heroes/tanjiro_hit3.png'),
+                    pygame.image.load('images/sprites/heroes/tanjiro_hit4.png')]
+
+        self.death = [pygame.image.load('images/sprites/heroes/tanjiro_death1.png'),
+                      pygame.image.load('images/sprites/heroes/tanjiro_death2.png'),
+                      pygame.image.load('images/sprites/heroes/tanjiro_death3.png')]
+
 
         # анимация
         self.current_frame = 0
+        self.image = self.stand
+
         self.frames = []
-        self.load_frames()
-        self.image = self.frames[0]
-
-
-
-
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
         self.flip = False
 
-    # анимация
-    def load_frames(self):
+
+    # обновление анимации
+    def animation(self):
         if self.run_animation:
-            spritesheet = pygame.image.load("images/sprites/heroes/tanjiro_run.png").convert_alpha()
-            for i in range(5):
-                self.frames.append(spritesheet.subsurface((0, 0, 20, 21)))
-        else:
-            spritesheet = pygame.image.load("images/sprites/heroes/tanjiro_stand.png").convert_alpha()
-            for i in range(10):
-                self.frames.append(spritesheet.subsurface((0, 0, 22, 51)))
+            self.current_frame = (self.current_frame + 1) % len(self.run)
+            self.image = self.run[self.current_frame]
+            self.rect = self.image.get_rect()
+            self.rect.center = (self.x, self.y)
 
-    def update(self):
-        self.current_frame += 1
-        if self.current_frame == len(self.frames):
+        if self.jump_animation:
+            self.current_frame = (self.current_frame + 1) % len(self.jump)
+            self.image = self.jump[self.current_frame]
+            self.rect = self.image.get_rect()
+            self.rect.center = (self.x, self.y)
+
+        if self.stand_animation:
+            # анимация
             self.current_frame = 0
+            self.image = self.stand
 
-        self.image = self.frames[self.current_frame]
-        if self.flip:
-            self.image = pygame.transform.flip(self.image, True, False)
-
+            self.frames = []
+            self.rect = self.image.get_rect()
+            self.rect.center = (self.x, self.y)
+            self.flip = False
 
     def collide(self, tiles):
         collision = current_map.get_layer_by_name('platforms')
@@ -81,27 +105,33 @@ class Player(pygame.sprite.Sprite):
         keys = pygame.key.get_pressed()
         tiles_collision = self.collide(tiles)
 
-        # если эту часть убрать, то перс в воздухе не может передвигаться, а если добавить, то столкновения не работают
         if keys[pygame.K_LEFT] and self.y < 400:
             self.x -= self.speed
-            self.run_animation = True
 
         if keys[pygame.K_RIGHT] and self.y < 350:
             self.x += self.speed
-            self.run_animation = True
 
         # проверяем коллизии персонажа с тайлами
         for tile in tiles_collision:
             if self.rect.colliderect(tile):
                 if keys[pygame.K_LEFT]:
                     self.x -= self.speed
+                    self.stand_animation = False
                     self.run_animation = True
+                    self.jump_animation = False
                 if keys[pygame.K_RIGHT]:
                     self.x += self.speed
+                    self.stand_animation = False
                     self.run_animation = True
+                    self.jump_animation = False
                 if keys[pygame.K_UP] and self.check_platforms():
                     self.y -= self.jumpspeed
                     self.fallspeed = -self.jumpspeed
+                    self.stand_animation = False
+                    self.run_animation = False
+                    self.jump_animation = True
+                if (not keys[pygame.K_LEFT]) and (not keys[pygame.K_RIGHT]) and (not keys[pygame.K_UP]):
+                    self.stand_animation = True
 
 
         if not self.check_platforms():
@@ -336,8 +366,7 @@ while running:
 
     # обновление игрока
     player.move(tiles, width_size, height_size)
-    player.load_frames()
-    player.update()
+    player.animation()
 
     # отрисовка тайлов и игрока
     screen.fill((0, 0, 0))
