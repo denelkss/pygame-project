@@ -10,9 +10,10 @@ class Player(pygame.sprite.Sprite):
         self.x = x
         self.y = y
 
-        # действия персонажа (стоять, бежать, прыгать, ранить, смерть)
+        # действия персонажа (стоять, бежать вправо и влево, прыгать, ранить, смерть)
         self.stand_animation = True
-        self.run_animation = False
+        self.runR_animation = False
+        self.runL_animation = False
         self.jump_animation = False
         self.hit = False
         self.death = False
@@ -25,11 +26,17 @@ class Player(pygame.sprite.Sprite):
 
         self.stand = pygame.image.load('images/sprites/heroes/tanjiro_stand.png')
 
-        self.run = [pygame.image.load('images/sprites/heroes/tanjiro_run1.png'),
+        self.run_right = [pygame.image.load('images/sprites/heroes/tanjiro_run1.png'),
                     pygame.image.load('images/sprites/heroes/tanjiro_run2.png'),
                     pygame.image.load('images/sprites/heroes/tanjiro_run3.png'),
                     pygame.image.load('images/sprites/heroes/tanjiro_run4.png'),
                     pygame.image.load('images/sprites/heroes/tanjiro_run5.png')]
+
+        self.run_left = [pygame.image.load('images/sprites/heroes/tanjiro_runL1.png'),
+                    pygame.image.load('images/sprites/heroes/tanjiro_runL2.png'),
+                    pygame.image.load('images/sprites/heroes/tanjiro_runL3.png'),
+                    pygame.image.load('images/sprites/heroes/tanjiro_runL4.png'),
+                    pygame.image.load('images/sprites/heroes/tanjiro_runL5.png')]
 
         self.jump = [pygame.image.load('images/sprites/heroes/tanjiro_jump2.png'),
                      pygame.image.load('images/sprites/heroes/tanjiro_jump3.png')]
@@ -43,7 +50,6 @@ class Player(pygame.sprite.Sprite):
                       pygame.image.load('images/sprites/heroes/tanjiro_death2.png'),
                       pygame.image.load('images/sprites/heroes/tanjiro_death3.png')]
 
-
         # анимация
         self.current_frame = 0
         self.image = self.stand
@@ -53,12 +59,17 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = (self.x, self.y)
         self.flip = False
 
-
     # обновление анимации
     def animation(self):
-        if self.run_animation:
-            self.current_frame = (self.current_frame + 1) % len(self.run)
-            self.image = self.run[self.current_frame]
+        if self.runR_animation:
+            self.current_frame = (self.current_frame + 1) % len(self.run_right)
+            self.image = self.run_right[self.current_frame]
+            self.rect = self.image.get_rect()
+            self.rect.center = (self.x, self.y)
+
+        if self.runL_animation:
+            self.current_frame = (self.current_frame + 1) % len(self.run_left)
+            self.image = self.run_left[self.current_frame]
             self.rect = self.image.get_rect()
             self.rect.center = (self.x, self.y)
 
@@ -86,7 +97,6 @@ class Player(pygame.sprite.Sprite):
                 tiles_collision.append(pygame.Rect([(x * tile_size), (y * tile_size), tile_size, tile_size]))
 
         return tiles_collision
-
 
     # стоит ли персонаж на земле
     def check_platforms(self):
@@ -117,28 +127,95 @@ class Player(pygame.sprite.Sprite):
                 if keys[pygame.K_LEFT]:
                     self.x -= self.speed
                     self.stand_animation = False
-                    self.run_animation = True
+                    self.runR_animation = False
+                    self.runL_animation = True
                     self.jump_animation = False
+
                 if keys[pygame.K_RIGHT]:
                     self.x += self.speed
                     self.stand_animation = False
-                    self.run_animation = True
+                    self.runR_animation = True
+                    self.runL_animation = False
                     self.jump_animation = False
+
                 if keys[pygame.K_UP] and self.check_platforms():
                     self.y -= self.jumpspeed
                     self.fallspeed = -self.jumpspeed
                     self.stand_animation = False
-                    self.run_animation = False
+                    self.runR_animation = False
+                    self.runL_animation = False
                     self.jump_animation = True
+
                 if (not keys[pygame.K_LEFT]) and (not keys[pygame.K_RIGHT]) and (not keys[pygame.K_UP]):
                     self.stand_animation = True
-
 
         if not self.check_platforms():
             self.fallspeed += self.gravity
             self.y += self.fallspeed
 
         self.rect.center = (self.x, self.y)
+
+
+class Monster(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.pos_x = x
+        self.pos_y = y
+
+        self.speed = 3
+
+        self.runL_animation = True  # анимация, когда персонаж направляется в левую сторону
+        self.runR_animation = False  # анимация, когда персонаж направляется в правую сторону
+
+        self.run_left = [pygame.image.load('images/sprites/monsters/pink_monster_runL1.png'),
+                          pygame.image.load('images/sprites/monsters/pink_monster_runL2.png'),
+                          pygame.image.load('images/sprites/monsters/pink_monster_runL3.png'),
+                          pygame.image.load('images/sprites/monsters/pink_monster_runL4.png'),
+                          pygame.image.load('images/sprites/monsters/pink_monster_runL5.png'),
+                          pygame.image.load('images/sprites/monsters/pink_monster_runL6.png')]
+
+        self.run_right = [pygame.image.load('images/sprites/monsters/pink_monster_runR1.png'),
+                         pygame.image.load('images/sprites/monsters/pink_monster_runR2.png'),
+                         pygame.image.load('images/sprites/monsters/pink_monster_runR3.png'),
+                         pygame.image.load('images/sprites/monsters/pink_monster_runR4.png'),
+                         pygame.image.load('images/sprites/monsters/pink_monster_runR5.png'),
+                         pygame.image.load('images/sprites/monsters/pink_monster_runR6.png')]
+
+        self.current_frame = 0
+        self.image = self.run_left[0]
+
+        self.frames = []
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.x, self.y)
+
+    def animation(self):
+        if self.runL_animation:
+            self.current_frame = (self.current_frame + 1) % len(self.run_left)
+            self.image = self.run_left[self.current_frame]
+            self.rect = self.image.get_rect()
+            self.rect.center = (self.x, self.y)
+
+        if self.runR_animation:
+            self.current_frame = (self.current_frame + 1) % len(self.run_right)
+            self.image = self.run_right[self.current_frame]
+            self.rect = self.image.get_rect()
+            self.rect.center = (self.x, self.y)
+
+    def move(self):
+        if -50 <= self.pos_x - self.x <= 50:
+            self.x -= self.speed
+            if self.speed > 0:
+                 self.runL_animation = True
+                 self.runR_animation = False
+            else:
+                self.runL_animation = False
+                self.runR_animation = True
+
+        else:
+            self.speed = -self.speed
+            self.x -= self.speed
 
 
 class Tile(pygame.sprite.Sprite):
@@ -348,10 +425,9 @@ map3 = pytmx.load_pygame("images/map/level3.tmx")
 
 current_map = map1  # текущая карта
 
-
-
 width_player, height_player = 48, 70
 player = Player(70, 330)
+pink_monster = Monster(288, 345)
 
 main_menu()
 
@@ -363,15 +439,18 @@ while running:
 
     tiles = draw_map(current_map)
 
-
     # обновление игрока
     player.move(tiles, width_size, height_size)
     player.animation()
+
+    pink_monster.move()
+    pink_monster.animation()
 
     # отрисовка тайлов и игрока
     screen.fill((0, 0, 0))
     tiles.draw(screen)
     screen.blit(player.image, player.rect)
+    screen.blit(pink_monster.image, pink_monster.rect)
 
     pygame.display.flip()
 
