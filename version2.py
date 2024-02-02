@@ -10,33 +10,27 @@ class Player(pygame.sprite.Sprite):
         self.x = x
         self.y = y
 
-        # действия персонажа (стоять, бежать вправо и влево, прыгать, ранить, смерть)
-        self.stand_animation = True
-        self.runR_animation = False
-        self.runL_animation = False
-        self.jump_animation = False
-        self.hit = False
-        self.death = False
-
+        # действия персонажа
+        self.action = 'stand'
         # передвижение
         self.speed = 5
         self.fallspeed = 0
-        self.jumpspeed = 8
-        self.gravity = 0.8
+        self.jumpspeed = 10
+        self.gravity = 1
 
         self.stand = pygame.image.load('images/sprites/heroes/tanjiro_stand.png')
 
         self.run_right = [pygame.image.load('images/sprites/heroes/tanjiro_run1.png'),
-                    pygame.image.load('images/sprites/heroes/tanjiro_run2.png'),
-                    pygame.image.load('images/sprites/heroes/tanjiro_run3.png'),
-                    pygame.image.load('images/sprites/heroes/tanjiro_run4.png'),
-                    pygame.image.load('images/sprites/heroes/tanjiro_run5.png')]
+                          pygame.image.load('images/sprites/heroes/tanjiro_run2.png'),
+                          pygame.image.load('images/sprites/heroes/tanjiro_run3.png'),
+                          pygame.image.load('images/sprites/heroes/tanjiro_run4.png'),
+                          pygame.image.load('images/sprites/heroes/tanjiro_run5.png')]
 
         self.run_left = [pygame.image.load('images/sprites/heroes/tanjiro_runL1.png'),
-                    pygame.image.load('images/sprites/heroes/tanjiro_runL2.png'),
-                    pygame.image.load('images/sprites/heroes/tanjiro_runL3.png'),
-                    pygame.image.load('images/sprites/heroes/tanjiro_runL4.png'),
-                    pygame.image.load('images/sprites/heroes/tanjiro_runL5.png')]
+                         pygame.image.load('images/sprites/heroes/tanjiro_runL2.png'),
+                         pygame.image.load('images/sprites/heroes/tanjiro_runL3.png'),
+                         pygame.image.load('images/sprites/heroes/tanjiro_runL4.png'),
+                         pygame.image.load('images/sprites/heroes/tanjiro_runL5.png')]
 
         self.jump = [pygame.image.load('images/sprites/heroes/tanjiro_jump2.png'),
                      pygame.image.load('images/sprites/heroes/tanjiro_jump3.png')]
@@ -61,25 +55,25 @@ class Player(pygame.sprite.Sprite):
 
     # обновление анимации
     def animation(self):
-        if self.runR_animation:
+        if self.action == 'runR':
             self.current_frame = (self.current_frame + 1) % len(self.run_right)
             self.image = self.run_right[self.current_frame]
             self.rect = self.image.get_rect()
             self.rect.center = (self.x, self.y)
 
-        if self.runL_animation:
+        if self.action == 'runL':
             self.current_frame = (self.current_frame + 1) % len(self.run_left)
             self.image = self.run_left[self.current_frame]
             self.rect = self.image.get_rect()
             self.rect.center = (self.x, self.y)
 
-        if self.jump_animation:
+        if self.action == 'jump':
             self.current_frame = (self.current_frame + 1) % len(self.jump)
             self.image = self.jump[self.current_frame]
             self.rect = self.image.get_rect()
             self.rect.center = (self.x, self.y)
 
-        if self.stand_animation:
+        if self.action == 'stand':
             # анимация
             self.current_frame = 0
             self.image = self.stand
@@ -88,6 +82,13 @@ class Player(pygame.sprite.Sprite):
             self.rect = self.image.get_rect()
             self.rect.center = (self.x, self.y)
             self.flip = False
+
+        if self.action == 'death':
+            self.current_frame += 1
+            if self.current_frame <= 2:
+                self.image = self.death[self.current_frame]
+                self.rect = self.image.get_rect()
+                self.rect.center = (self.x, self.y)
 
     def collide(self, tiles):
         collision = current_map.get_layer_by_name('platforms')
@@ -115,39 +116,36 @@ class Player(pygame.sprite.Sprite):
         keys = pygame.key.get_pressed()
         tiles_collision = self.collide(tiles)
 
+        if self.y >= 550:
+            game_over('lose')
+
         if keys[pygame.K_LEFT] and self.y < 400:
-            self.x -= self.speed
+            if self.x - self.speed >= 0:
+                self.x -= self.speed
 
         if keys[pygame.K_RIGHT] and self.y < 350:
-            self.x += self.speed
+            if self.x + self.speed <= map_width:
+                self.x += self.speed
 
         # проверяем коллизии персонажа с тайлами
         for tile in tiles_collision:
             if self.rect.colliderect(tile):
                 if keys[pygame.K_LEFT]:
-                    self.x -= self.speed
-                    self.stand_animation = False
-                    self.runR_animation = False
-                    self.runL_animation = True
-                    self.jump_animation = False
+                    if (self.x - self.speed >= 0) and not (pygame.sprite.spritecollide(self, monsters_group, False)):
+                        self.x -= self.speed
+                        self.action = 'runL'
 
-                if keys[pygame.K_RIGHT]:
-                    self.x += self.speed
-                    self.stand_animation = False
-                    self.runR_animation = True
-                    self.runL_animation = False
-                    self.jump_animation = False
+                if keys[pygame.K_RIGHT] and not (pygame.sprite.spritecollide(self, monsters_group, False)):
+                    if self.x + self.speed <= map_width:
+                        self.x += self.speed
+                        self.action = 'runR'
 
-                if keys[pygame.K_UP] and self.check_platforms():
+                if keys[pygame.K_UP] and self.check_platforms() and not (pygame.sprite.spritecollide(self, monsters_group, False)):
                     self.y -= self.jumpspeed
                     self.fallspeed = -self.jumpspeed
-                    self.stand_animation = False
-                    self.runR_animation = False
-                    self.runL_animation = False
-                    self.jump_animation = True
 
                 if (not keys[pygame.K_LEFT]) and (not keys[pygame.K_RIGHT]) and (not keys[pygame.K_UP]):
-                    self.stand_animation = True
+                    self.action = 'stand'
 
         if not self.check_platforms():
             self.fallspeed += self.gravity
@@ -165,23 +163,21 @@ class Monster(pygame.sprite.Sprite):
         self.pos_y = y
 
         self.speed = 3
-
-        self.runL_animation = True  # анимация, когда персонаж направляется в левую сторону
-        self.runR_animation = False  # анимация, когда персонаж направляется в правую сторону
+        self.action = 'runL'
 
         self.run_left = [pygame.image.load('images/sprites/monsters/pink_monster_runL1.png'),
-                          pygame.image.load('images/sprites/monsters/pink_monster_runL2.png'),
-                          pygame.image.load('images/sprites/monsters/pink_monster_runL3.png'),
-                          pygame.image.load('images/sprites/monsters/pink_monster_runL4.png'),
-                          pygame.image.load('images/sprites/monsters/pink_monster_runL5.png'),
-                          pygame.image.load('images/sprites/monsters/pink_monster_runL6.png')]
+                         pygame.image.load('images/sprites/monsters/pink_monster_runL2.png'),
+                         pygame.image.load('images/sprites/monsters/pink_monster_runL3.png'),
+                         pygame.image.load('images/sprites/monsters/pink_monster_runL4.png'),
+                         pygame.image.load('images/sprites/monsters/pink_monster_runL5.png'),
+                         pygame.image.load('images/sprites/monsters/pink_monster_runL6.png')]
 
         self.run_right = [pygame.image.load('images/sprites/monsters/pink_monster_runR1.png'),
-                         pygame.image.load('images/sprites/monsters/pink_monster_runR2.png'),
-                         pygame.image.load('images/sprites/monsters/pink_monster_runR3.png'),
-                         pygame.image.load('images/sprites/monsters/pink_monster_runR4.png'),
-                         pygame.image.load('images/sprites/monsters/pink_monster_runR5.png'),
-                         pygame.image.load('images/sprites/monsters/pink_monster_runR6.png')]
+                          pygame.image.load('images/sprites/monsters/pink_monster_runR2.png'),
+                          pygame.image.load('images/sprites/monsters/pink_monster_runR3.png'),
+                          pygame.image.load('images/sprites/monsters/pink_monster_runR4.png'),
+                          pygame.image.load('images/sprites/monsters/pink_monster_runR5.png'),
+                          pygame.image.load('images/sprites/monsters/pink_monster_runR6.png')]
 
         self.current_frame = 0
         self.image = self.run_left[0]
@@ -191,13 +187,13 @@ class Monster(pygame.sprite.Sprite):
         self.rect.center = (self.x, self.y)
 
     def animation(self):
-        if self.runL_animation:
+        if self.action == 'runL':
             self.current_frame = (self.current_frame + 1) % len(self.run_left)
             self.image = self.run_left[self.current_frame]
             self.rect = self.image.get_rect()
             self.rect.center = (self.x, self.y)
 
-        if self.runR_animation:
+        if self.action == 'runR':
             self.current_frame = (self.current_frame + 1) % len(self.run_right)
             self.image = self.run_right[self.current_frame]
             self.rect = self.image.get_rect()
@@ -207,12 +203,9 @@ class Monster(pygame.sprite.Sprite):
         if -50 <= self.pos_x - self.x <= 50:
             self.x -= self.speed
             if self.speed > 0:
-                 self.runL_animation = True
-                 self.runR_animation = False
+                self.action = 'runL'
             else:
-                self.runL_animation = False
-                self.runR_animation = True
-
+                self.action = 'runR'
         else:
             self.speed = -self.speed
             self.x -= self.speed
@@ -295,10 +288,42 @@ def change_map(tmx_map):
     # координаты игрока (в зависимости от текущей карты)
     if current_map == map1:
         player = Player(70, 340)
+
+        pink_monster1 = Monster(288, 345)
+        monsters_group.add(pink_monster1)
+        pink_monster2 = Monster(1452, 345)
+        monsters_group.add(pink_monster2)
+        pink_monster3 = Monster(1958, 345)
+        monsters_group.add(pink_monster3)
+
+        if player.x >= 2288:
+            game_over('won')
+
     elif current_map == map2:
         player = Player(70, 325)
+
+        pink_monster1 = Monster(275, 345)
+        monsters_group.add(pink_monster1)
+        pink_monster2 = Monster(1050, 448)
+        monsters_group.add(pink_monster2)
+        pink_monster3 = Monster(1330, 448)
+        monsters_group.add(pink_monster3)
+
+        if player.x >= 2700:
+            game_over('won')
+
     elif current_map == map3:
         player = Player(70, 355)
+
+        pink_monster1 = Monster(288, 365)
+        monsters_group.add(pink_monster1)
+        pink_monster2 = Monster(550, 365)
+        monsters_group.add(pink_monster2)
+        pink_monster3 = Monster(900, 365)
+        monsters_group.add(pink_monster3)
+
+        if player.x >= 1350:
+            game_over('won')
 
 
 # играть
@@ -344,9 +369,51 @@ def play():
         pygame.display.update()
 
 
+# конец игры
+def game_over(result):
+    running = True
+    while running:
+        screen.blit(background, (0, 0))
+        play_mouse_pos = pygame.mouse.get_pos()
+
+        if result == 'won':
+            text_result = get_font(100).render("Вы выиграли!", True, (105, 105, 105))
+            text_result2 = get_font(30).render(f"Поздравляем, повержено {count_kill} из 3 монстров",
+                                               True, (105, 105, 105))
+        else:
+            text_result = get_font(100).render("Вы проиграли!", True, (105, 105, 105))
+            text_result2 = get_font(30).render(f"Попробуйте снова, повержено {count_kill} из 3 монстров",
+                                               True, (105, 105, 105))
+        result_rect = text_result.get_rect(center=(600, 150))
+        result_rect2 = text_result.get_rect(center=(600, 250))
+
+        back_play = Button(None, (600, 450), get_font(60), "назад", (105, 105, 105),
+                               "green")
+
+        screen.blit(text_result, result_rect)
+        screen.blit(text_result2, result_rect2)
+
+        back_play.change_color(play_mouse_pos)
+        back_play.update(screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_play.check_input(play_mouse_pos):
+                    running = False
+                    play()
+
+        pygame.display.update()
+
+
 # правила игры
 def rules_game():
-    while True:
+    running = True
+    while running:
         screen.blit(background, (0, 0))
         rules_mouse_pos = pygame.mouse.get_pos()
 
@@ -358,6 +425,7 @@ def rules_game():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                running = False
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -427,7 +495,9 @@ current_map = map1  # текущая карта
 
 width_player, height_player = 48, 70
 player = Player(70, 330)
-pink_monster = Monster(288, 345)
+monsters_group = pygame.sprite.Group()
+
+count_kill = 0
 
 main_menu()
 
@@ -443,14 +513,26 @@ while running:
     player.move(tiles, width_size, height_size)
     player.animation()
 
-    pink_monster.move()
-    pink_monster.animation()
+    for monster in monsters_group:
+        monster.move()
+        monster.animation()
+
+    for monster in monsters_group:
+        if player.rect.collidepoint(monster.rect.midtop):
+            monster.kill()
+            count_kill += 1
+
+        elif player.rect.collidepoint(monster.rect.midleft) or player.rect.collidepoint(monster.rect.midleft):
+            player.action = 'death'
+            game_over('lose')
+            monster.kill()
 
     # отрисовка тайлов и игрока
     screen.fill((0, 0, 0))
     tiles.draw(screen)
     screen.blit(player.image, player.rect)
-    screen.blit(pink_monster.image, pink_monster.rect)
+    for monster in monsters_group:
+        screen.blit(monster.image, monster.rect)
 
     pygame.display.flip()
 
