@@ -108,17 +108,21 @@ class Player(pygame.sprite.Sprite):
         return check
 
     def move(self, tiles, map_width, map_height):
+        global count_kill
+
         keys = pygame.key.get_pressed()
         tiles_collision = self.collide(tiles)
 
         if self.y >= 550:
-            game_over('lose')
+            result_kill = count_kill
+            count_kill = 0
+            game_over('lose', result_kill)
 
-        if keys[pygame.K_LEFT] and self.y < 400:
+        if keys[pygame.K_LEFT] and self.y < 500:
             if self.x - self.speed >= 0:
                 self.x -= self.speed
 
-        if keys[pygame.K_RIGHT] and self.y < 350:
+        if keys[pygame.K_RIGHT] and self.y < 500:
             if self.x + self.speed <= map_width:
                 self.x += self.speed
 
@@ -292,9 +296,6 @@ def change_map(tmx_map):
         pink_monster3 = Monster(1958, 345)
         monsters_group.add(pink_monster3)
 
-        if player.x >= 2288:
-            game_over('won')
-
     elif current_map == map2:
         player = Player(70, 325)
 
@@ -305,9 +306,6 @@ def change_map(tmx_map):
         pink_monster3 = Monster(1330, 448)
         monsters_group.add(pink_monster3)
 
-        if player.x >= 2700:
-            game_over('won')
-
     elif current_map == map3:
         player = Player(70, 355)
 
@@ -317,9 +315,6 @@ def change_map(tmx_map):
         monsters_group.add(pink_monster2)
         pink_monster3 = Monster(900, 365)
         monsters_group.add(pink_monster3)
-
-        if player.x >= 1350:
-            game_over('won')
 
 
 # играть
@@ -366,8 +361,7 @@ def play():
 
 
 # конец игры
-def game_over(result):
-
+def game_over(result, result_kill):
     for monster in monsters_group:
         monster.kill()
 
@@ -378,12 +372,13 @@ def game_over(result):
 
         if result == 'won':
             text_result = get_font(100).render("Вы выиграли!", True, (105, 105, 105))
-            text_result2 = get_font(30).render(f"Поздравляем, повержено {count_kill} из 3 монстров",
+            text_result2 = get_font(30).render(f"Поздравляем, повержено {result_kill} из 3 монстров",
                                                True, (105, 105, 105))
         else:
             text_result = get_font(100).render("Вы проиграли!", True, (105, 105, 105))
-            text_result2 = get_font(30).render(f"Попробуйте снова, повержено {count_kill} из 3 монстров",
+            text_result2 = get_font(30).render(f"Попробуйте снова, повержено {result_kill} из 3 монстров",
                                                True, (105, 105, 105))
+
         result_rect = text_result.get_rect(center=(600, 150))
         result_rect2 = text_result.get_rect(center=(600, 250))
 
@@ -417,8 +412,10 @@ def rules_game():
         screen.blit(background, (0, 0))
         rules_mouse_pos = pygame.mouse.get_pos()
 
-        text_rules1 = get_font(34).render("Движение игрока при помощи стрелок:", True, (105, 105, 105))
-        text_rules2 = get_font(34).render("< - налево, > - направо, ^ - прыжок", True, (105, 105, 105))
+        text_rules1 = get_font(34).render("Движение игрока при помощи стрелок:", True,
+                                          (105, 105, 105))
+        text_rules2 = get_font(34).render("< - налево, > - направо, ^ - прыжок", True,
+                                          (105, 105, 105))
         text_rules3 = get_font(34).render("Чтобы убить монстра - напрыгните на него сверху", True,
                                           (105, 105, 105))
 
@@ -494,7 +491,7 @@ def main_menu():
 
 pygame.init()
 pygame.display.set_caption("Танджиро: в поисках Незуко")
-screen_size = width_size, height_size = 2400, 640
+screen_size = width_size, height_size = 1600, 640
 tile_size = 16
 screen = pygame.display.set_mode(screen_size)
 
@@ -537,7 +534,15 @@ while running:
 
         elif player.rect.collidepoint(monster.rect.midleft) or player.rect.collidepoint(monster.rect.midleft):
             player.action = 'death'
-            game_over('lose')
+            result_kill = count_kill
+            count_kill = 0
+            game_over('lose', result_kill)
+
+    if (player.x >= 2288 and current_map == map1) or (player.x >= 2700 and current_map == map2) or (
+            player.x >= 1450 and current_map == map3):
+        result_kill = count_kill
+        count_kill = 0
+        game_over('won', result_kill)
 
     # отрисовка тайлов и игрока
     screen.fill((0, 0, 0))
@@ -549,3 +554,8 @@ while running:
     pygame.display.flip()
 
 pygame.quit()
+
+# размер окна - 1200, 640
+# размер 1 карты - 2400, 640
+# размер 2 карты - 2880, 640
+# размер 3 карты - 1600, 640
