@@ -374,13 +374,23 @@ def game_over(result, result_kill):
             text_result = get_font(100).render("Вы выиграли!", True, (105, 105, 105))
             text_result2 = get_font(30).render(f"Поздравляем, повержено {result_kill} из 3 монстров",
                                                True, (105, 105, 105))
-        else:
+            result_rect = text_result.get_rect(center=(600, 150))
+            result_rect2 = text_result.get_rect(center=(600, 250))
+
+        elif result == 'finish':
+            text_result = get_font(100).render("Вы выиграли!", True, (105, 105, 105))
+            text_result2 = get_font(30).render(f"Поздравляем, игра пройдена! Повержено {result_kill} из 3 монстров",
+                                               True, (105, 105, 105))
+            result_rect = text_result.get_rect(center=(600, 150))
+            result_rect2 = text_result.get_rect(center=(500, 250))
+
+        elif result == 'lose':
             text_result = get_font(100).render("Вы проиграли!", True, (105, 105, 105))
             text_result2 = get_font(30).render(f"Попробуйте снова, повержено {result_kill} из 3 монстров",
                                                True, (105, 105, 105))
+            result_rect = text_result.get_rect(center=(600, 150))
+            result_rect2 = text_result.get_rect(center=(600, 250))
 
-        result_rect = text_result.get_rect(center=(600, 150))
-        result_rect2 = text_result.get_rect(center=(600, 250))
 
         back_play = Button(None, (600, 450), get_font(60), "назад", (105, 105, 105),
                            "green")
@@ -507,6 +517,8 @@ count_kill = 0  # подсчёт результатов (количество у
 
 width_player, height_player = 48, 70
 player = Player(70, 330)
+nezuko = pygame.image.load("images/sprites/heroes/nezuko.png")
+nezuko_rect = nezuko.get_rect(center=(1450, 360))
 monsters_group = pygame.sprite.Group()
 
 main_menu()
@@ -538,18 +550,23 @@ while running:
             count_kill = 0
             game_over('lose', result_kill)
 
-    if (player.x >= 2288 and current_map == map1) or (player.x >= 2700 and current_map == map2) or (
-            player.x >= 1450 and current_map == map3):
+    if (player.x >= 2288 and current_map == map1) or (player.x >= 2700 and current_map == map2):
         result_kill = count_kill
         count_kill = 0
         game_over('won', result_kill)
+    if player.x >= 1450 and current_map == map3:
+        result_kill = count_kill
+        count_kill = 0
+        game_over('finish', result_kill)
 
-    # отрисовка тайлов и игрока
+    # отрисовка тайлов и игрока, монстров
     screen.fill((0, 0, 0))
     tiles.draw(screen)
     screen.blit(player.image, player.rect)
     for monster in monsters_group:
         screen.blit(monster.image, monster.rect)
+    if current_map == map3:
+        screen.blit(nezuko, nezuko_rect)
 
     pygame.display.flip()
 
