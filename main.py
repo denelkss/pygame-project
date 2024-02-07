@@ -4,9 +4,23 @@ import os
 import sys
 
 
+all_sprites = pygame.sprite.Group()
+
+class Camera:
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+
+    def apply(self, obj):
+        obj.rect.x += self.dx
+
+    def update(self, target):
+        self.dx = -(target.rect.x + target.rect.w // 2 - width_size // 2)
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
-        super().__init__()
+        super().__init__(all_sprites)
         self.x = x
         self.y = y
 
@@ -213,7 +227,7 @@ class Monster(pygame.sprite.Sprite):
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, image, x, y):
-        super().__init__()
+        super().__init__(all_sprites)
         self.image = image
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -501,7 +515,7 @@ def main_menu():
 
 pygame.init()
 pygame.display.set_caption("Танджиро: в поисках Незуко")
-screen_size = width_size, height_size = 1600, 640
+screen_size = width_size, height_size = 1200, 640
 tile_size = 16
 screen = pygame.display.set_mode(screen_size)
 
@@ -516,6 +530,7 @@ current_map = map1  # текущая карта
 count_kill = 0  # подсчёт результатов (количество убитых монстров)
 
 width_player, height_player = 48, 70
+camera = Camera()
 player = Player(70, 330)
 nezuko = pygame.image.load("images/sprites/heroes/nezuko.png")
 nezuko_rect = nezuko.get_rect(center=(1450, 360))
@@ -538,6 +553,13 @@ while running:
     for monster in monsters_group:
         monster.move()
         monster.animation()
+
+    camera.update(player)
+    for sprite in monsters_group:
+        camera.apply(sprite)
+
+    for sprite in all_sprites:
+        camera.apply(sprite)
 
     for monster in monsters_group:
         if player.rect.collidepoint(monster.rect.midtop):
