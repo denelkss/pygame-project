@@ -9,7 +9,6 @@ all_sprites = pygame.sprite.Group()
 class Camera:
     def __init__(self):
         self.dx = 0
-        self.dy = 0
 
     def apply(self, obj):
         obj.rect.x += self.dx
@@ -407,7 +406,7 @@ def game_over(result, result_kill):
             text_result2 = get_font(30).render(f"Поздравляем, игра пройдена! Повержено {result_kill} из 3 монстров",
                                                True, (105, 105, 105))
             result_rect = text_result.get_rect(center=(600, 150))
-            result_rect2 = text_result.get_rect(center=(500, 250))
+            result_rect2 = text_result.get_rect(center=(450, 250))
 
         elif result == 'lose':
             text_result = get_font(100).render("Вы проиграли!", True, (105, 105, 105))
@@ -594,7 +593,6 @@ while running:
 
     fps.tick(30)
     pygame.display.flip()
-
 pygame.quit()
 
 # размер окна - 1200, 640
