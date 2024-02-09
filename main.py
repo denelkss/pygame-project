@@ -3,7 +3,7 @@ import pytmx
 import os
 import sys
 
-
+# группа всх спрайтов для обновления
 all_sprites = pygame.sprite.Group()
 
 class Camera:
@@ -99,6 +99,7 @@ class Player(pygame.sprite.Sprite):
                 self.rect = self.image.get_rect()
                 self.rect.center = (self.x, self.y)
 
+    # столкновения с платформами
     def collide(self, tiles):
         collision = current_map.get_layer_by_name('platforms')
         tiles_collision = []
@@ -121,7 +122,8 @@ class Player(pygame.sprite.Sprite):
             check = True
         return check
 
-    def move(self, tiles, map_width, map_height):
+    # передвижение игрока
+    def move(self, tiles):
         global count_kill
 
         keys = pygame.key.get_pressed()
@@ -132,26 +134,24 @@ class Player(pygame.sprite.Sprite):
             count_kill = 0
             game_over('lose', result_kill)
 
-        if keys[pygame.K_LEFT] and self.y < 500:
-            if self.x - self.speed >= 0:
-                self.x -= self.speed
+        if keys[pygame.K_LEFT] and self.x - self.speed >= 0:
+            self.x -= self.speed
 
-        if keys[pygame.K_RIGHT] and self.y < 500:
-            if self.x + self.speed <= map_width:
-                self.x += self.speed
+        if keys[pygame.K_RIGHT]:
+            self.x += self.speed
 
         # проверяем коллизии персонажа с тайлами
         for tile in tiles_collision:
             if self.rect.colliderect(tile):
                 if keys[pygame.K_LEFT]:
-                    if (self.x - self.speed >= 0) and not (pygame.sprite.spritecollide(self, monsters_group, False)):
+                    if (self.x - self.speed >= 0) and not (pygame.sprite.spritecollide(self, monsters_group,
+                                                                                       False)):
                         self.x -= self.speed
                         self.action = 'runL'
 
                 if keys[pygame.K_RIGHT] and not (pygame.sprite.spritecollide(self, monsters_group, False)):
-                    if self.x + self.speed <= map_width:
-                        self.x += self.speed
-                        self.action = 'runR'
+                    self.x += self.speed
+                    self.action = 'runR'
 
                 if keys[pygame.K_UP] and self.check_platforms() and not (
                         pygame.sprite.spritecollide(self, monsters_group, False)):
@@ -200,6 +200,7 @@ class Monster(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
 
+    # анимация передвижения монстров
     def animation(self):
         if self.action == 'runL':
             self.current_frame = (self.current_frame + 1) % len(self.run_left)
@@ -213,6 +214,7 @@ class Monster(pygame.sprite.Sprite):
             self.rect = self.image.get_rect()
             self.rect.center = (self.x, self.y)
 
+    # передвижение монстров
     def move(self):
         if -50 <= self.pos_x - self.x <= 50:
             self.x -= self.speed
@@ -305,30 +307,39 @@ def change_map(tmx_map):
 
         pink_monster1 = Monster(288, 345)
         monsters_group.add(pink_monster1)
+        all_sprites.add(pink_monster1)
         pink_monster2 = Monster(1452, 345)
         monsters_group.add(pink_monster2)
+        all_sprites.add(pink_monster2)
         pink_monster3 = Monster(1958, 345)
         monsters_group.add(pink_monster3)
+        all_sprites.add(pink_monster3)
 
     elif current_map == map2:
         player = Player(70, 325)
 
         pink_monster1 = Monster(275, 345)
         monsters_group.add(pink_monster1)
+        all_sprites.add(pink_monster1)
         pink_monster2 = Monster(1050, 448)
         monsters_group.add(pink_monster2)
+        all_sprites.add(pink_monster2)
         pink_monster3 = Monster(1330, 448)
         monsters_group.add(pink_monster3)
+        all_sprites.add(pink_monster3)
 
     elif current_map == map3:
         player = Player(70, 355)
 
         pink_monster1 = Monster(288, 365)
         monsters_group.add(pink_monster1)
+        all_sprites.add(pink_monster1)
         pink_monster2 = Monster(550, 365)
         monsters_group.add(pink_monster2)
+        all_sprites.add(pink_monster2)
         pink_monster3 = Monster(900, 365)
         monsters_group.add(pink_monster3)
+        all_sprites.add(pink_monster3)
 
 
 # играть
@@ -404,7 +415,6 @@ def game_over(result, result_kill):
                                                True, (105, 105, 105))
             result_rect = text_result.get_rect(center=(600, 150))
             result_rect2 = text_result.get_rect(center=(600, 250))
-
 
         back_play = Button(None, (600, 450), get_font(60), "назад", (105, 105, 105),
                            "green")
@@ -518,6 +528,7 @@ pygame.display.set_caption("Танджиро: в поисках Незуко")
 screen_size = width_size, height_size = 1200, 640
 tile_size = 16
 screen = pygame.display.set_mode(screen_size)
+fps = pygame.time.Clock()
 
 background = pygame.image.load("images/menu/background.png")  # фон для меню
 
@@ -532,10 +543,7 @@ count_kill = 0  # подсчёт результатов (количество у
 width_player, height_player = 48, 70
 camera = Camera()
 player = Player(70, 330)
-nezuko = pygame.image.load("images/sprites/heroes/nezuko.png")
-nezuko_rect = nezuko.get_rect(center=(1450, 360))
 monsters_group = pygame.sprite.Group()
-
 main_menu()
 
 running = True
@@ -547,21 +555,13 @@ while running:
     tiles = draw_map(current_map)
 
     # обновление игрока
-    player.move(tiles, width_size, height_size)
+    player.move(tiles)
     player.animation()
 
     for monster in monsters_group:
         monster.move()
         monster.animation()
 
-    camera.update(player)
-    for sprite in monsters_group:
-        camera.apply(sprite)
-
-    for sprite in all_sprites:
-        camera.apply(sprite)
-
-    for monster in monsters_group:
         if player.rect.collidepoint(monster.rect.midtop):
             monster.kill()
             count_kill += 1
@@ -572,24 +572,27 @@ while running:
             count_kill = 0
             game_over('lose', result_kill)
 
-    if (player.x >= 2288 and current_map == map1) or (player.x >= 2700 and current_map == map2):
+    camera.update(player)
+    if player.rect.x >= 600:
+        for sprite in all_sprites:
+            camera.apply(sprite)
+
+    if (player.x >= 2240 and current_map == map1) or (player.x >= 2600 and current_map == map2):
         result_kill = count_kill
         count_kill = 0
         game_over('won', result_kill)
-    if player.x >= 1450 and current_map == map3:
+    if player.x >= 1296 and current_map == map3:
         result_kill = count_kill
         count_kill = 0
         game_over('finish', result_kill)
 
     # отрисовка тайлов и игрока, монстров
-    screen.fill((0, 0, 0))
     tiles.draw(screen)
     screen.blit(player.image, player.rect)
     for monster in monsters_group:
         screen.blit(monster.image, monster.rect)
-    if current_map == map3:
-        screen.blit(nezuko, nezuko_rect)
 
+    fps.tick(30)
     pygame.display.flip()
 
 pygame.quit()
